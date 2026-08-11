@@ -3,7 +3,7 @@ package cuentas; // Indica que esta clase pertenece al paquete "cuentas".
 import java.time.LocalDate;
 // Definición de la clase CuentaCorriente.
 public class CuentaCorriente {
-
+    private static final int MAX_MOVIMIENTOS = 10;
     // =========================
     // ATRIBUTOS
     // =========================
@@ -31,7 +31,7 @@ public class CuentaCorriente {
         this.numero = numero;
         this.titular = titular;
         this.saldo = 0;
-        this.movimientos = new Movimientos[10];
+        this.movimientos = new Movimientos[MAX_MOVIMIENTOS];
         this.cantidadMovimientos = 0;
     }
 
@@ -40,7 +40,7 @@ public class CuentaCorriente {
         this.numero = numero;
         this.titular = titular;
         this.saldo = saldo;
-        this.movimientos = new Movimientos[10];
+        this.movimientos = new Movimientos[MAX_MOVIMIENTOS];
         this.cantidadMovimientos = 0;
     }
 
