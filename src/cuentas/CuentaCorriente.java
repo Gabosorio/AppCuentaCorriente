@@ -4,6 +4,8 @@ import java.time.LocalDate;
 // Definición de la clase CuentaCorriente.
 public class CuentaCorriente {
     private static final int MAX_MOVIMIENTOS = 10;
+    private static final String ABONO = "Abono";
+    private static final String CARGO = "Cargo";
     // =========================
     // ATRIBUTOS
     // =========================
@@ -14,8 +16,9 @@ public class CuentaCorriente {
     // Nombre del titular de la cuenta.
     private String titular;
 
-    // Saldo disponible en la cuenta.
-    private Integer saldo;
+    // Saldo de apertura y movimientos que salieron del historial FIFO.
+    // El balance actual siempre se obtiene al recorrer los movimientos vigentes.
+    private Integer saldoInicial;
     // Arreglo que almacena los últimos 10 movimientos de la cuenta.
     private Movimientos[] movimientos;
     // Controla cuántos movimientos han sido registrados.
@@ -30,7 +33,7 @@ public class CuentaCorriente {
     public CuentaCorriente(Integer numero, String titular) {
         this.numero = numero;
         this.titular = titular;
-        this.saldo = 0;
+        this.saldoInicial = 0;
         this.movimientos = new Movimientos[MAX_MOVIMIENTOS];
         this.cantidadMovimientos = 0;
     }
@@ -39,7 +42,7 @@ public class CuentaCorriente {
     public CuentaCorriente(Integer numero, String titular, Integer saldo) {
         this.numero = numero;
         this.titular = titular;
-        this.saldo = saldo;
+        this.saldoInicial = saldo;
         this.movimientos = new Movimientos[MAX_MOVIMIENTOS];
         this.cantidadMovimientos = 0;
     }
@@ -59,9 +62,9 @@ public class CuentaCorriente {
         return titular;
     }
 
-    // Devuelve el saldo actual.
+    // Devuelve el saldo actual calculado a partir de los movimientos.
     public Integer getSaldo() {
-        return saldo;
+        return consultarBalance();
     }
 
 
@@ -93,7 +96,7 @@ public class CuentaCorriente {
     // No permite valores negativos.
     public void setSaldo(Integer saldo) {
         if (saldo >= 0) {
-            this.saldo = saldo;
+            saldoInicial = saldo - calcularMontoMovimientos();
         } else {
             System.out.println("El saldo no puede ser negativo.");
         }
@@ -111,7 +114,7 @@ public class CuentaCorriente {
     public String toString() {
         return "Número: " + numero +
                 ", Titular: " + titular +
-                ", Saldo: " + saldo;
+                ", Saldo: " + consultarBalance();
     }
     // Registra un movimiento en el arreglo.
     // Si el arreglo está lleno, elimina el movimiento más antiguo
@@ -123,12 +126,33 @@ public class CuentaCorriente {
             movimientos[cantidadMovimientos] = new Movimientos(tipoMovimiento, monto, fecha);
             cantidadMovimientos++;
         } else {
+            saldoInicial += valorFirmado(movimientos[0]);
             for (int i = 0; i < movimientos.length - 1; i++) {
                 movimientos[i] = movimientos[i + 1];
             }
 
             movimientos[movimientos.length - 1] = new Movimientos(tipoMovimiento, monto, fecha);
         }
+    }
+
+    // Obtiene el efecto neto de los movimientos conservados en el historial.
+    private int calcularMontoMovimientos() {
+        int balance = 0;
+
+        for (int i = 0; i < cantidadMovimientos; i++) {
+            balance += valorFirmado(movimientos[i]);
+        }
+
+        return balance;
+    }
+
+    // Convierte cada movimiento en su aporte al balance.
+    private int valorFirmado(Movimientos movimiento) {
+        if (CARGO.equals(movimiento.getMovimiento())) {
+            return -movimiento.getMonto();
+        }
+
+        return movimiento.getMonto();
     }
     // =========================
     // MÉTODO ABONAR
@@ -137,18 +161,10 @@ public class CuentaCorriente {
     // Agrega dinero al saldo de la cuenta.
     // Solo acepta montos positivos.
     public void abonar(Integer valor) {
-
         // Verifica que el monto sea válido.
         if (valor > 0) {
-
-            // Suma el valor al saldo actual.
-            this.saldo += valor;
-
-            // Registra el abono en el arreglo de movimientos.
-            registrarMovimiento("Abono", valor);
-
+            registrarMovimiento(ABONO, valor);
         } else {
-
             // Informa que el monto ingresado no es válido.
             System.out.println("El monto a abonar debe ser mayor que cero.");
         }
@@ -161,22 +177,19 @@ public class CuentaCorriente {
 
     // Descuenta dinero del saldo de la cuenta.
     public void cargar(Integer valor) {
-        // No permite cargar montos negativos ni cero
+        // No permite cargar montos negativos ni cero.
         if (valor <= 0) {
             System.out.println("El monto a cargar debe ser mayor que cero.");
-        }
-        // Si existe saldo suficiente, realiza el descuento.
-        else if (saldo - valor >= 0) {
+        } else {
+            int saldoActual = consultarBalance();
 
-            this.saldo -= valor;
-            // Registra el cargo en el arreglo de movimientos.
-            registrarMovimiento("Cargo", valor);
-        }
-        // Si el retiro supera el saldo disponible,
-        // el saldo queda en cero según el requerimiento.
-        else {
-            registrarMovimiento("Cargo", saldo);
-            this.saldo = 0;
+            // Registra el cargo completo si existe saldo suficiente.
+            if (saldoActual >= valor) {
+                registrarMovimiento(CARGO, valor);
+            } else {
+                // Si el retiro supera el saldo disponible, se carga solo lo disponible.
+                registrarMovimiento(CARGO, saldoActual);
+            }
         }
     }
 
@@ -192,8 +205,8 @@ public class CuentaCorriente {
         }
     }
 
-    // Devuelve el saldo actual de la cuenta como balance.
+    // Calcula el saldo recorriendo la colección de movimientos.
     public Integer consultarBalance() {
-        return saldo;
+        return saldoInicial + calcularMontoMovimientos();
     }
 }
