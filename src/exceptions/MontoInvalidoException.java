@@ -5,3 +5,4 @@ public class MontoInvalidoException extends RuntimeException {
         super(mensaje);
     }
 }
+

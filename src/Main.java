@@ -2,6 +2,8 @@
 // Esto permite crear objetos de esa clase en este archivo.
 import cuentas.CuentaCorriente;
 import exceptions.MontoInvalidoException;
+import exceptions.SaldoInsuficienteException;
+import exceptions.FechaInvalidaException;
 
 // Clase principal del programa.
 // Desde aquí comienza la ejecución cuando presionamos Run.
@@ -58,6 +60,39 @@ void main() {
     }finally {
         System.out.println("Proceso de cargos finalizado.");
     }
+    IO.println("\n=== PRUEBA SALDO INSUFICIENTE ===");
+    try {
+        cuenta1.cargar(999999);
+    } catch (SaldoInsuficienteException e) {
+        System.out.println("Error de negocio: " + e.getMessage());
+    }
+
+    IO.println("\n=== PRUEBA FECHA ===");
+    try {
+        cuenta1.validarFecha("31/02/2026");
+        System.out.println("Fecha válida.");
+    } catch (FechaInvalidaException e) {
+        System.out.println("Error de fecha: " + e.getMessage());
+    }
+// En la primera prueba se captura una excepcion especifica:
+// ArrayIndexOutOfBoundsException.
+// En la segunda prueba se captura la misma situacion con Exception,
+// que es una superclase mas general.
+    IO.println("\n=== PRUEBA EXCEPCION ESPECIFICA VS GENERAL ===");
+
+    try {
+        int[] numeros = {1, 2, 3};
+        IO.println(numeros[5]);
+    } catch (ArrayIndexOutOfBoundsException e) {
+        System.out.println("Captura especifica: indice fuera del arreglo.");
+    }
+
+    try {
+        int[] numeros = {1, 2, 3};
+        IO.println(numeros[5]);
+    } catch (Exception e) {
+        System.out.println("Captura general: " + e.getClass().getSimpleName());
+    }
 
 
     // Imprime nuevamente la cuenta para verificar el nuevo saldo.
@@ -81,5 +116,10 @@ void main() {
     IO.println("\n=== BALANCE FINAL DESPUÉS DE LA PRUEBA ===");
     IO.println("Balance actual: " + cuenta1.consultarBalance());
     cuenta1.mostrarMovimientos();
-
+    PruebasExcepciones.ejecutarPruebasComunes();
+    ExplicacionErrores.mostrarExplicacion();
+    ExplicacionErrores.ejemploErrorLogico();
+    ExplicacionErrores.ejemploErrorSintacticoComentado();
+    ExplicacionErrores.explicarNivelesExcepciones();
+    ExplicacionErrores.analizarExcepcionesDelCajero();
 }

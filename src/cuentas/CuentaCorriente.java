@@ -1,7 +1,13 @@
 package cuentas; // Indica que esta clase pertenece al paquete "cuentas".
 
 import exceptions.MontoInvalidoException;
+import exceptions.SaldoInsuficienteException;
+import exceptions.FechaInvalidaException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
+
 // Definición de la clase CuentaCorriente.
 public class CuentaCorriente {
     private static final int MAX_MOVIMIENTOS = 10;
@@ -127,7 +133,8 @@ public class CuentaCorriente {
     // Si el arreglo está lleno, elimina el movimiento más antiguo
     // y conserva solo los últimos 10.
     private void registrarMovimiento(String tipoMovimiento, Integer monto) {
-        String fecha = LocalDate.now().toString();
+        DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        String fecha = LocalDate.now().format(formato);
 
         if (cantidadMovimientos < movimientos.length) {
             movimientos[cantidadMovimientos] = new Movimientos(tipoMovimiento, monto, fecha);
@@ -138,6 +145,17 @@ public class CuentaCorriente {
                 movimientos[i] = movimientos[i + 1];
             }
             movimientos[movimientos.length - 1] = new Movimientos(tipoMovimiento, monto, fecha);
+        }
+    }
+    public void validarFecha(String fecha) {
+        DateTimeFormatter formato = DateTimeFormatter
+                .ofPattern("dd/MM/uuuu")
+                .withResolverStyle(ResolverStyle.STRICT);
+
+        try {
+            LocalDate.parse(fecha, formato);
+        } catch (DateTimeParseException e) {
+            throw new FechaInvalidaException("La fecha debe ser real y tener formato DD/MM/YYYY.");
         }
     }
     // =========================
@@ -166,16 +184,15 @@ public class CuentaCorriente {
             throw new MontoInvalidoException("El monto a cargar debe ser mayor que cero.");
         }
         // Si existe saldo suficiente, realiza el descuento.
-        else if (consultarBalance()-valor >= 0) {
+        else if (consultarBalance() - valor >= 0) {
             // Registra el cargo en el arreglo de movimientos.
             registrarMovimiento("Cargo", valor);
             this.saldo = consultarBalance();
         }
-        // Si el retiro supera el saldo disponible,
-        // el saldo queda en cero según el requerimiento.
+        // Si el cargo supera el saldo disponible,
+        // se lanza una excepción de negocio.
         else {
-            registrarMovimiento("Cargo", consultarBalance());
-            this.saldo = consultarBalance();
+            throw new SaldoInsuficienteException("Saldo insuficiente para realizar el cargo.");
         }
     }
 
